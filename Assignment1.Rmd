@@ -1,0 +1,85 @@
+---
+title: "Data607-Assignment1"
+author: "David Apolinar"
+date: "2/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+install.packages("zipcode", repos = "http://cran.us.r-project.org")
+install.packages("tmap", repos = "http://cran.us.r-project.org")
+install.packages("tmaptools", repos = "http://cran.us.r-project.org")
+library(httr)
+library(rgdal)
+library(dplyr)
+library(plyr)
+library(bitops)
+library(RCurl)
+```
+
+```{r}
+
+## Load Mushroom CSV File from Github
+csv_file = "https://raw.githubusercontent.com/dapolloxp/data607/master/agaricus-lepiota.data.csv"
+pullCSVFile <- function (url) 
+{
+  if(url.exists(url))
+  {
+    expr <- tryCatch(
+      {
+        message(paste("CSV File ", url, " exists"))
+        message("Downloading CSV File from github...\nThis may take a while....")
+        out_file <- getURL(url)
+        csv_file <- read.csv(text = out_file)
+      },
+    error = function(err)
+    {
+      print(paste("Couldn't download file: ", err))
+    },
+    finally = {
+      return(csv_file)
+    }
+    
+    )
+ 
+  }
+  else
+  {
+    print(paste("Could not location CSV file at: ", url))
+    break()
+  }
+}
+result <- pullCSVFile(csv_file)
+### print the results 
+head(result, n=20)
+
+### Check the existing column names
+names(result)
+### Assign a vector of the data dictionary names
+col_names <- c("class", "cap-shape", "cap-surface", "cap-color", "bruises", "odor", "gill-attachment", "gill-spacing", "gill-size", "gill-color", "stalk-shape", "stalk-root", "stalk-surface-above-ring", "stalk-surface-below-ring", "stalk-color-above-ring", "stalk-color-below-ring", "veil-type", "veil-color", "ring-number", "ring-type", "spore-print-color", "population", "habitat")
+### Rename the existing columns to the data dictionary version
+names(result) <- col_names
+
+### Check the new names for the file
+names(result)
+
+### Print top 20 rows
+head(result, n=20)
+
+
+### Select class, cap-shape, cap-color, odor, population
+mushroom_subset <- result[c("class", "cap-shape", "cap-color", "odor", "population")]
+
+# Use plyr library to rename class
+
+mushroom_subset$class <- revalue(mushroom_subset$class, c("e"="edible", "p"="poisonous"))
+mushroom_subset$`cap-shape` <-  revalue(mushroom_subset$`cap-shape`, c("b"="bell","c"="conical","x"="convex","f"="flat","k"="knobbed","s"="sunken"))
+mushroom_subset$`cap-color` <- revalue(mushroom_subset$`cap-color`, c("n"="brown","b"="buff","c"="cinnamon","g"="gray","r"="green","p"="pink","u"="purple","e"="red","w"="white","y"="yellow"))
+mushroom_subset$odor <- revalue(mushroom_subset$odor, c("a"="almond","l"="anise","c"="creosote","y"="fishy","f"="foul","m"="musty","n"="none","p"="pungent","s"="spicy"))
+mushroom_subset$population <- revalue(mushroom_subset$population, c("a"="abundant","c"="clustered","n"="numerous","s"="scattered","v"="several","y"="solitary"))
+# print all values
+mushroom_subset
+
+```
+

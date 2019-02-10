@@ -1,0 +1,83 @@
+---
+title: "Assignment 2"
+author: "David Apolinar"
+date: "2/10/2019"
+output: html_document
+---
+
+Introduction:
+
+This rpub contains data for several movies with 5 user reviews for each. All users are rating the same movies.  
+
+This R markdown uses Azure MySQL to retrieve data.
+![RPubs to Azure MySQL Connection](https://raw.githubusercontent.com/dapolloxp/data607/master/assignment2/MYSQL%20RStudio.jpg)
+![The MySQL Database Schema looks as follows:](https://raw.githubusercontent.com/dapolloxp/data607/master/assignment2/mysql%20db%20tables.png)
+There is a movies table, a users table, and a movieratings table. There is a many to many relationship between users and movieratings.
+
+
+```{r echo = TRUE, results='hide'}
+### Install Required Packages
+install.packages("DBI", repos = "http://cran.us.r-project.org")
+install.packages("tidyverse",repos = "http://cran.us.r-project.org")
+install.packages("magrittr", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+
+### Load Required Packages
+library(DBI)
+library(tidyverse)
+library(magrittr)
+library(dplyr)
+```
+In this section we will make a connection to a Azure MySQL hosting the schema referenced above
+```{r SQL Connection}
+### Create SQL Connection
+con <- dbConnect(RMariaDB::MariaDB(), user='rreadonly@cunyspsmysql', password="", dbname='moviereviews' ,host='cunyspsmysql.mysql.database.azure.com')
+
+### Get a list of all SQL tables
+dbListTables(con)
+```
+In this section we will pull the revelent information into a dataframe.
+```{r SQL queries}
+## Gather all important fields from the SQL DB for analysis
+mysql_movies <- dbGetQuery(con, 'select u.username, u.firstname, u.lastname, m.title, m.category, m.length, mr.rating, mr.review from users as u
+join users_movierating as umr on u.userid = umr.userid
+                           join movierating as mr on umr.movieratingid = mr.movieratingid
+                           join movies as m on mr.movieid = m.movieid;')
+
+## Let's look at the first 10 rows
+head(mysql_movies, n= 10)
+## Check the dimensions of the data
+dim(mysql_movies)
+## Let's view our table headers
+names(mysql_movies)
+```
+I want to group and create graphs based on the rating and create a chart. For this section, I will use dplyr
+```{r}
+## Group the titles by name and average the scores  using dplyr.
+avg_movie_rating <- mysql_movies %>% group_by(title) %>% summarise(AvgRating=mean(rating))
+```
+Graph: Average Movie Review for each title
+```{r}
+## Graph movie titles vs the average score. 
+gg <- ggplot(data = avg_movie_rating) + geom_point(mapping =aes(x= title, y=AvgRating, color = AvgRating))  
+gg <- gg + theme(axis.text.x = element_text(angle = 90), axis.line = element_line(color = "blue", size = 1, linetype = "solid"))  + xlab("Movie Title") + ylab("Average User Review")
+gg + ggtitle("Average Movie Score Review")
+##
+```
+Now, let's create a boxplot to determine how movie ratings compared for each category
+```{r}
+## Group Movies by category and average score using dplyr
+avg_movie_rating <- mysql_movies %>% group_by(title) %>% summarise(AvgRating=mean(rating))
+gg2 <- ggplot(data = mysql_movies, aes(x =category, y=rating)) + geom_boxplot(fill='#A4A4A4', color='blue')
+gg2 + theme(axis.text.x = element_text(angle = 0))  + xlab("Movie Category") + ylab("User Rating")
+gg + ggtitle("User Rating per movie category")
+```
+Summary
+
+Based on the sample of movies selected, it appears that animation and horror had a good year. We would need a much larger sample to determine which movies were the most popular.
+```{r}
+dbDisconnect(con)
+```
+
+
+

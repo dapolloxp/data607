@@ -1,0 +1,120 @@
+---
+title: "Data607 Assignment"
+author: "David Apolinar, Anthony Muñoz"
+date: "2/14/2019"
+output: html_document
+---
+```{r install packages}
+library(stringr)
+```
+
+
+### Problem 3 Both
+
+#### 3-1
+```{r 3-1}
+
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+regex <- "([a-zA-Z,. ]){2,}"
+name <- unlist(str_extract_all(raw.data, regex))
+name
+str(name)
+data.name <- str_remove_all(name,"(\\w+)\\.\\s")
+data.name
+data.name <-gsub("(\\w+)\\,\\s(.*)","\\2 \\1", data.name)
+df <- data.frame(str_split_fixed(data.name, " ", 2))
+colnames(df) <- c("First Name","Last Name")
+df
+
+```
+#### Problem 3-2
+#### Checking whether the names have a title
+```{r 3-2}
+str_detect(name, "[A-Za-z]{2,3}\\.")
+# We can see that 3rd and last name contain titles
+unlist(str_extract(name, "[A-Za-z]{2,3}\\."))
+
+```
+#### Problem 3-3
+#### Check whether a character has a 2nd name
+```{r 3 c}
+# We need to remove the title first
+cleaned_names <- str_remove_all(name,"[A-Za-z]{2,3}\\.")
+cleaned_names
+# let's detect whether any of these have a more than 3 names
+str_count(str_trim(cleaned_names), "\\w+") > 2
+## Only C. Montomery Burns has a middle name
+
+
+```
+### Problem 4 Both
+#### a. [0-9]+\\$  this will extract any digits, ending with a '$'
+```{r 4 a}
+#this will extract any digits, ending with a ampersand
+unlist(str_extract_all(c("test23455$eklelkd8989k"), "[0-9]+\\$"))
+
+```
+#### b. \\b[a-z]{1,4}\\b
+
+#### This will extract and lower case words with a break, less than 4 characters.
+```{r 4 b}
+unlist(str_extract_all(c("This will extract And lower Case words with a break, less than 4 characters."), "\\b[a-z]{1,4}\\b"))
+```
+#### c .*?\\.txt$
+#### This will extract files that end with a .txt extension
+```{r 4 c}
+unlist(str_extract("this sentence contains a filename called t.txt with a .txt extension filename.txt", ".*?\\.txt$"))
+paste("The full filename will be extracted because the regex pulls until the ending .txt")
+unlist(str_extract("file with a .txt in the name.txt", ".*?\\.txt$"))
+```
+#### d. \\d{2}/\\d{2}/\\d{4}
+#### This will extract a date pattern, such as 02/19/2018
+```{r 4 d}
+message <- "This contains 07/04/1776, such as 3494095, but it also contains, such as 33/35/3533444"
+paste("The following text will be extracted: ")
+unlist(str_extract_all(message, "\\d{2}/\\d{2}/\\d{4}"))
+```
+
+
+#### e. <(.+?)>.+?</\\1>
+#### This captures anything that starts with a <tag> anything in between, up to the closing tag</tag>. Anything after is not captured.
+```{r 4 e}
+unlist(str_extract_all("Not captured <html><b><i>this is captured</i></html> This is not captured", "<(.+?)>.+?</\\1>"))
+```
+
+### Problem 9 David
+####Find the hidden message
+```{r problem 9 David}
+hiddenMessage <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0Tanwo
+Uwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigO
+d6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5
+fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+### Showing method below for how I figured it out
+# extract letters
+unlist(str_extract_all(hiddenMessage, "[[:alpha:]]"))
+# extract upper
+unlist(str_extract_all(hiddenMessage, "[A-Z]"))
+## looks like a sentence, let's extract at the periods
+new.hidden <- unlist(str_extract_all(hiddenMessage, "([A-Z\\.])"))
+# let's get rid of the sapces
+new.hidden <- str_c(new.hidden, collapse = "")
+## let's split at the periods
+new.hidden
+## replace periods
+final.msg <- gsub("\\.", " ", new.hidden)
+tolower(final.msg)
+
+
+```
+### Problem 9 Anthony
+#### Find the Hidden Message
+```{r Anthony}
+
+data <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0Tanwo\nUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigO\nd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5\nfy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+
+data <- paste(unlist(str_extract_all(data,"[A-Z]")), collapse = "")
+gsub("(.{15})(.{3})(.{3})(.{1})(.{5})(.{4})","\\1 \\2 \\3 \\4 \\5 \\6", data)
+
+
+```
+

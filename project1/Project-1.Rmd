@@ -1,0 +1,64 @@
+---
+title: "Data607 Assignment"
+author: "David Apolinar, Anthony Muñoz, Christina Valore"
+date: "2/14/2019"
+output: 
+  html_document:
+   toc: true
+   toc_float: true
+---
+# Overview
+Team: Anthony, Christina, David
+
+Our team decided to use the following libraries to clean and select the data:
+
+  stringr
+  magrtitr
+  dplyer
+  DT
+# Data Cleansing
+
+In this section, we used the built-in R csv loader using "|" as a separator. This still left a lot of information to clean. Regular expressions were used to remove dashes and NAs rows.
+```{r}
+suppressWarnings(library(stringr))
+suppressWarnings(library(dplyr))
+library(ggplot2)
+library(DT)
+
+#Reading the Tournament file and separing by | and omiting the NAs
+data = read.csv(file = "https://raw.githubusercontent.com/dapolloxp/data607/master/project1/tournamentinfo.txt", header = FALSE, sep = "|",na.strings = c(" ", ""),stringsAsFactors = FALSE)[1:10] %>% na.omit()
+
+#Spliting the Players and merging rows
+data.new <- cbind(data[seq(1, nrow(data), by = 2 ), ],
+                data[seq(2, nrow(data), by = 2), 1:2 ])[-1,]
+#Naming the column
+colnames(data.new) <- c("num","Name","Points","round_1","round_2","round_3","round_4","round_5","round_6","round_7","State","Rating")
+
+#Extracting the pre rating 
+data.new$Rating <- as.numeric(as.character(str_remove_all(str_extract_all(data.new$Rating,"R: \\s?([\\d]{3,4})"),"R: \\s?")))
+#Removing the letters W D L 
+data.new <- data.frame(lapply(data.new, gsub, pattern = "([W D L])[ ]{2,3}(\\d+)", replacement = "\\2"), stringsAsFactors = FALSE)
+data.new$Points <- as.numeric(data.new$Points )
+data.new$Rating <- as.numeric(data.new$Rating)
+#Calculating the opponent average 
+data.new$Average <- apply(data.new[,4:10], MARGIN=1,function(x) {
+   suppressWarnings(round(mean(as.numeric(as.character(data.new$Rating[as.numeric(x)])),na.rm =TRUE)))
+    })
+```
+# DataTable
+```{r DataTable}
+#creating the DataTable with preferenced column
+datatable(data.new[ c(2,3,11,12,13)]) 
+
+
+#creating the CSV file
+write.csv(data.new[ c(2,3,11,12,13)], file = "Data.csv")
+```
+#  Data Selection and Visualization
+
+```{r Data Graph}
+#looking at the graph its seem fairly normal distrubution.
+ggplot(data=data.new) + geom_histogram (aes(x=Points),color="Blue", fill="white", bins = 6) + labs(title="Points Frequency plot",x="Points", y = "Frequency ") 
+
+
+```

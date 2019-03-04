@@ -1,0 +1,93 @@
+---
+title: "Assignment 5 - Using Tidyr and Dplyr"
+author: "David Apolinar"
+date: "3/2/2019"
+output: 
+  html_document:
+   toc: true
+   toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(httr)
+library(dplyr)
+library(magrittr)
+library(tidyr)
+library(treemapify)
+library(ggplot2)
+```
+
+# Data Shaping using Tidyr
+
+In this section, I chose to use both gather and spread to take my desired table output. To make the data easier to manipulate, I duplicated the airline name in the 2nd and 5th row as the tidyr gather/spread libraries made it easier to reshape the data. Based on this data, I also wanted to answer which airline experiences less delays at a general level as well as a per city level.
+
+```{r read CSV File}
+
+csv_url = read.csv(file = "https://raw.githubusercontent.com/dapolloxp/data607/master/assignment5/flight-comp.csv", header = TRUE)
+
+flights.df <- data.frame(csv_url)
+# Flight data has a row with NAs. Let's remove this
+head(flights.df)
+
+# Let's create a function that checks each row for na's. This would be helpful for thousands of rows
+
+# Let's filter out the row with na's
+
+filtered.flights <- drop_na(flights.df)
+filtered.flights[2,1] = filtered.flights[1,1]
+filtered.flights[4,1] = filtered.flights[3,1]
+
+#
+gathered.flights <- gather(filtered.flights , "City", "n", 3:7)
+
+names(gathered.flights)[1] <- "Airline"
+names(gathered.flights)[2] <- "Status"
+
+tidy.table <- spread(gathered.flights, "Status", "n")
+```
+# Data Grouping using dplyr
+
+In this section, I wanted to take the average delay by airlines. On the surface, it appears that AM West has a higher average, 157 vs 100. However, looking at these numbers alone does not tell the full story. We need to look at the ratios of delayed vs ontime.
+```{r data analysis}
+# Let's compare the average delayed flights between the two airlines
+# based on the average delay by airline, it looks like AM West is delayed many more times than Alaska
+delayed.by.airline <- tidy.table %>% group_by(Airline) %>% summarise(Avgdelayed = format(mean(delayed), 4)) %>% arrange(desc(Avgdelayed))
+# Looing at the avgerage ontime by airlines, it appears AM West has many instances where it is ontime more than Alaska. This can be due to AM West having more flights as a whole. Let's compare the ratios.
+ontime.by.airline <- tidy.table %>% group_by(Airline) %>% summarise(AvgOntime = format(mean(`On time`), 4)) %>% arrange(desc(AvgOntime))
+# change char to double
+ontime.by.airline$AvgOntime <- as.numeric(ontime.by.airline$AvgOntime)
+delayed.by.airline$Avgdelayed <- as.numeric(delayed.by.airline$Avgdelayed)
+
+
+```
+# Flight Analysis
+
+when taking the ratio of delayed vs the total for each airline, we can see that AM West actually experiences a much lower rate of delays vs Alaska: 11% vs 13%, even though AM West has much more volume. 
+```{r chart analysis}
+# Let's check the percentage of delayed flights
+df<- tidy.table %>% group_by(Airline) %>% summarise(Delayed=sum(delayed),OnTime=sum(`On time`)) %>% mutate(PercentDelayed=round(Delayed/(Delayed+OnTime),2))
+df <- df %>% mutate(Total=Delayed+OnTime)
+df
+paste0("AM West's percentage delayed flights were: ", round(df %>% filter(Airline == 'AM WEST') %>% select(PercentDelayed),2), "%")
+paste0("Alaska's percentage delayed flights are: ", round(df %>% filter(Airline == 'ALASKA') %>% select(PercentDelayed),2), "%")
+```
+# Comparing Airlines by City
+In this section, I wanted to see how many flights each airline has per city. I chose to graph this as it can visually show which cities have heavier volume and a higher count of delays.
+```{r graphs}
+# Let's see how each airline flys by city
+ggplot(data=tidy.table, aes(x=Airline, y=`On time` + delayed)) + geom_bar(stat = "identity", aes(fill=City), position ="dodge") + labs(x= "Airline by City", y="Total Flights by City", title = "Airline Total Flights by City")
+ggplot(data=tidy.table, aes(x=Airline, y=delayed)) + geom_bar(stat = "identity", aes(fill=City), position ="dodge") + labs(x= "Airline by City", y=" Delayed Flights by City", title = "Airline Total Flight Delays by City")
+
+```
+
+Within this chart, we can see how each airline compares to each other by city. Overall, the numbers are relatively close for Seattle and San Franciso, but there are gaps in Los Angeles and San Diego. However, even though AM West has a lower percentage delay overall, it still has a higher delay in several cities when compared to Alaska airlines.
+```{r delay by city}
+tidy.table %>% mutate(Total=delayed +`On time`) %>% mutate(PercentDelayed=round(delayed/Total,2))
+#tidy.table %>% group_by(City) %>% summarise(Avgdelayed = format(mean(delayed), 4)) %>% arrange(desc(Avgdelayed))
+
+
+```
+# Conclusion
+
+Analyzing data at an aggregate level does not always tell the complete story. It is important to break data into much more granular levels to uncover hidden information that may not be obvious within a summary level. At a wholistic level, AM West has a slightly lower delay rate vs Alaska, however, AM West also has much more volume, 7225 vs 3775, almost double that of Alaska. However, Alaska experiences a much lower delay rate per city vs AM West. The question remains however, if Alaska had the same volume as AM West, would the numbers be closer?

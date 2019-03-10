@@ -1,8 +1,12 @@
 ---
-title: "Project 2"
+title: "Project 2: Dataset (Phily Crime)"
 author: "David Apolinar"
 date: "3/4/2019"
-output: html_document
+output: 
+  html_document:
+   toc: true
+   toc_float: true
+
 ---
 
 ```{r setup, include=FALSE}
@@ -10,9 +14,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-## Pulling Data from Azure Blob Storage
+# Overview
 
-As part of this data pull, we are also filtering data to focus on a single year of data crime.
+For this analysis, I choose to review Philly's crime data to determine which sections are the most dangerous, but also, answer the following questions:
+
+(1) What time of the year does the most crime occur?
+(2) What day of the week does most crime occur?
+(3) What time of the day does most crime occur?
+(4) Which are the most common crimes committed in Philly?
+(5) Which sections are experience the most amount of crime?
+
+# Pulling Data from Azure Blob Storage
+
+This data was originally downloaded from the City of Philadelphia's public data. 
+As part of this data pull, I stored the data on Azure Blob storage instead of github due to github's 25MB limit. I am also filtering the data to focus on a single year of data crime (2018). The original file is roughly 300 MB in size, and therefore it was necessary to reduce the total number of records.
 
 ```{r read CSV file}
 library(readr)
@@ -24,36 +39,99 @@ library(treemapify)
 library(ggplot2)
 library(stringr)
 library(treemap)
+library(revgeo)
+library(zipcode)
+library(leaflet)
+library(DT)
+
 incidents <- read_csv("https://azuredocuments.blob.core.windows.net/phillycrime/phillycrime2016-2019.csv")
 
 # Data has 3 years of information. For this assignment, we selected crime for only 2018.
 crime2018 <- incidents[incidents$dispatch_date >= as.Date('2018-01-01') & incidents$dispatch_date < as.Date('2019-01-01'),]
 
+# Let's take a quick glance at the data
 head(crime2018, n=3)
-crime2018 <- crime2018 %>% select(dc_dist, psa, dispatch_date_time, location_block, text_general_code, ucr_general, lng, lat, hour_)
+crime2018 <- crime2018 %>% select(dc_dist, psa, dispatch_date, dispatch_time, location_block, text_general_code, ucr_general, lng, lat, hour_)
+# Let's check the columns we are working with.
 names(crime2018)
 
 ```
-# Choosing a subset of columns using dplyr
+# Choosing a subset of columns and cleaning data using dplyr
+
+When looking at the data, we see that we have several NA values that we need to remove. In addition, I choose to clean out the word 'block' from the address field as it appears to be added by the City of Philadelphia.
+
+In addition to removing values, I also chose to leverage dplyr's mutate function to add two derived values to help answer the questions above.
+
 
 ```{r drop na}
+# drop na from all rows
 filtered2018 <- drop_na(crime2018)
 
+# remove block from the address field
 filtered2018$location_block<-filtered2018$location_block %>% str_remove_all("BLOCK")
-filtered2018
+# add a month column
+filtered2018 <- filtered2018  %>% mutate(month=format(dispatch_date, "%B"))
 
+# add day of week column
+filtered2018 <- filtered2018  %>% mutate(Weekday=format(dispatch_date, "%A"))
+
+```
+# Data Analysis
+
+In this section, I want to start answering some of the questions above. I chose to use dplyr's group_by and summarize functions to count the most common crime categories, the total crime by month, and the total crime by the day of the week.
+```{r analysis}
 
 # Unique category names
 unique.categories <- filtered2018 %>% select(text_general_code) %>% distinct()
-
+#datatable(unique.categories)
 # Counts per category
 
-catgegory.counts <- filtered2018 %>% group_by(text_general_code) %>% summarise(Total=n()) %>% arrange(desc(Total))
+category.counts <- filtered2018 %>% group_by(text_general_code) %>% summarise(Total=n()) %>% arrange(desc(Total))
+datatable(category.counts)
+# Counts by Month
+
+month.counts <- filtered2018 %>% group_by(month) %>% summarise(Total=n()) %>% arrange(desc(Total))
+datatable(month.counts)
+# Counts by Day of Week
+
+weekday.counts <- filtered2018 %>% group_by(Weekday) %>% summarise(Total=n()) %>% arrange(desc(Total))
+datatable(weekday.counts)
+
 ```
 
+# Data Visualization
 
-```{r map}
-treemap(catgegory.counts, #Your data frame object
+The first question we want to answer is what time during the year do most crimes occur? Based on the graph below, it appears as the summer months, crime is most prevalent. There does appear to be a peak during the holiday months, but not as high as during the summer. 
+
+The 2nd question we can answer here is what time of the day do most crimes occur? Based on the histogram and using a 0-24 scale for time of the day, we can see that most crime occurs during 11-12am and 5-6pm. 
+```{r month geo bar}
+
+# Create a factor so that our geom_bar is ordered by month.
+month.factor.order <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+g<-ggplot(filtered2018, aes(x=ordered(filtered2018$month, levels = month.factor.order))) + geom_bar(fill ="darkblue")+ labs(y= "Total crimes commited over the year", x="Month", title="Total Philly Crimes over the calendar year") 
+g
+
+gh <- ggplot(filtered2018, aes(x=hour_)) + geom_histogram(color="black", fill="red") +  labs(y= "Total crimes commited over the day", x="Time of the day", title="Total Philly Crimes during the day (Time is in a 0-24 scale)") 
+gh
+```
+One of our other questions, what day of the week does most crime occur, can be answered by the graph below. Ironically, Monday is when most crime activities appear to occur with crime slowly tampering off towards the weekends.
+
+```{r weekday bar}
+weekday.factor <- c(weekday.counts$Weekday)
+g<-ggplot(filtered2018, aes(x=ordered(filtered2018$Weekday, levels = weekday.factor))) + geom_bar(fill ="blue") + labs(y= "Total crimes commited", x="Weekday", title="Total Philly Crimes over weekday") 
+g
+```
+
+To answer the most common categories of crime, we will use a datatable and a tree map to visually see how each crime category fits into the entire picture. Based on the datatable, the top crimes committed in Philly are All Other Offenses, Other Assaults, and Theft. The first two are generic and difficult to determine what they are, but the most common defined category appears to be theft.
+
+```{r dt most common crimes}
+datatable(category.counts)
+```
+Below is a treemap to visually show how the table categories above contribute to the overall crime.
+
+```{r most common categories}
+treemap(category.counts, #Your data frame object
         index=c("text_general_code"),  #A list of your categorical variables
         vSize = "Total",  #This is your quantitative variable
         type="index", #Type sets the organization and color scheme of your treemap
@@ -61,5 +139,19 @@ treemap(catgegory.counts, #Your data frame object
         title="Philly Crime 2018", #Customize your title
         fontsize.title = 14 #Change the font size of the title
         )
+```
+
+Finally, using spatial data, we can create a map to look at the cluster of crimes committed in Philly. The map is interactive and shows which areas are most affected by crime.
+
+```{r map}
+leaflet(data = filtered2018) %>% addTiles() %>%
+   addMarkers(~lng, ~lat, label= ~as.character(`text_general_code`), popup    = ~as.character(paste("Crime: ",text_general_code, ", Date: ", dispatch_date)),clusterOptions = markerClusterOptions())
 
 ```
+
+# Conclusion
+
+Philly's crime have some interesting and unexpected surprises. I did not expect total crime to be highest during the early morning or early evening. I did expect the summer months to have the highest levels of crime. As a potential future project, I would like to join this data with housing and economic data to determine if any correlation exists between the variables. 
+
+Other Observations:
+Having a large data sample was challenging to parse using R as certain calculations would cause R to hang. I am not certain as to why this was happening, but it is worth noting that I was able to leverage almost all of my observerations during the analysis abobe sans NA values.

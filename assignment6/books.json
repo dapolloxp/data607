@@ -1,0 +1,54 @@
+{
+  "books": 
+  [
+    {
+      "isbn": "9780345472328",
+      "title": "Mindset: The New Psychology of Success",
+      "author": 
+      [
+        {
+          "name" : "Carol S. Dweck"
+        }       
+      ],
+       "published": "2007",
+      "publisher": "Ballantine Books",
+      "pages": 320,
+      "price": 10.29
+
+    },
+    {
+      "isbn": "9781942788290",
+      "title": "Outliers: The Story of Success",
+      "author": 
+      [
+        {
+          "name" : "Gene Kim"
+        },
+        {
+          "name" : "Kevin Behr"
+        },
+        {
+          "name" : "George Spafford"
+        }
+      ],
+      "published": "2013",
+      "publisher": "IT Revolution Press",
+      "pages": 432,
+      "price": 16.32
+    },     
+    {
+      "isbn": "9781449365035",
+      "title": "Outliers: The Story of Success",
+      "author": 
+      [
+        {
+          "name" : "Malcolm Gladwell"
+        }       
+      ],
+      "published": "2011",
+      "publisher": "Back Bay Books",
+      "pages": 336,
+      "price": 9.89
+    }
+  ]
+}

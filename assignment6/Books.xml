@@ -13,7 +13,7 @@
   </books>
   <books>
     <isbn>9781942788290</isbn>
-    <title>Outliers: The Story of Success</title>
+    <title>The Phoenix Project</title>
     <author>
       <name>Gene Kim</name>
     </author>
@@ -23,7 +23,7 @@
     <author>
       <name>George Spafford</name>
     </author>
-    <published>2011</published>
+    <published>2013</published>
     <publisher>IT Revolution Press</publisher>
     <pages>432</pages>
     <price>16.32</price>

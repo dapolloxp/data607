@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+  <books>
+    <isbn>9780345472328</isbn>
+    <title>Mindset: The New Psychology of Success</title>
+    <author>
+      <name>Carol S. Dweck</name>
+    </author>
+    <published>2007</published>
+    <publisher>Ballantine Books</publisher>
+    <pages>320</pages>
+    <price>10.29</price>
+  </books>
+  <books>
+    <isbn>9781942788290</isbn>
+    <title>Outliers: The Story of Success</title>
+    <author>
+      <name>Gene Kim</name>
+    </author>
+    <author>
+      <name>Kevin Behr</name>
+    </author>
+    <author>
+      <name>George Spafford</name>
+    </author>
+    <published>2011</published>
+    <publisher>IT Revolution Press</publisher>
+    <pages>432</pages>
+    <price>16.32</price>
+  </books>
+  <books>
+    <isbn>9781449365035</isbn>
+    <title>Outliers: The Story of Success</title>
+    <author>
+      <name>Malcolm Gladwell</name>
+    </author>
+    <published>2011</published>
+    <publisher>Back Bay Books</publisher>
+    <pages>336</pages>
+    <price>9.89</price>
+  </books>
+</root>

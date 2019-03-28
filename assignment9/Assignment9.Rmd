@@ -1,0 +1,122 @@
+---
+title: "Assignment 9"
+author: "David Apolinar"
+output: 
+  html_document:
+   toc: true
+   toc_float: true
+---
+
+  
+### Intro {.tabset .tabset-fade .tabset-pills}
+
+For this assignment, I decided to try out 3 of NYtimes APIs. I used a few different parameters for the Articles and Newswire APIs to show the different results that can be returned. 
+
+* The Articles API
+* The Movie Reviews API
+* The Times Newswire API 
+
+All of the data was loaded using the jsonlite package, converted as a dataframe, and flatten out to make table selection simplier.
+
+```{r library loads}
+library(httr)
+library(ggplot2)
+library(knitr)
+library(jsonlite)
+library(magrittr)
+library(dplyr)
+library(DT)
+
+```   
+ 
+### NYTimes Article API
+
+Using this API, I decided to return all articles that contain keywords for the following topics:
+
+* Microsoft
+* Telsa
+* Amazon
+
+Searching all articles related to Microsoft and returning select columns:
+
+Note: Column names were renamed to make them user friendly.
+
+```{r}
+api_file <- "/Users/davidapolinar/Dropbox/APIkeys/nytimes.txt"
+key<-read.delim(api_file, header = FALSE)
+keyword <- "microsoft"
+
+query <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?", "q=",keyword,"&api-key=",key$V1 ,sep = "")
+y <- fromJSON(query, flatten = TRUE) %>% data.frame()
+
+out <- y %>% select(response.docs.web_url, response.docs.section_name, response.docs.headline.main, response.docs.byline.original) %>% rename(URL = response.docs.web_url, SectionName = response.docs.section_name, Headline = response.docs.headline.main, Author=response.docs.byline.original)
+DT::datatable(out, options = list(pageLength = 5))
+```
+
+Searching all articles related to Telsa and returning select columns:
+
+```{r}
+api_file <- "/Users/davidapolinar/Dropbox/APIkeys/nytimes.txt"
+key<-read.delim(api_file, header = FALSE)
+keyword <- "tesla"
+
+query <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?", "q=",keyword,"&api-key=",key$V1 ,sep = "")
+y <- fromJSON(query, flatten = TRUE) %>% data.frame()
+
+out <- y %>% select(response.docs.web_url, response.docs.section_name, response.docs.headline.main, response.docs.byline.original) %>% rename(URL = response.docs.web_url, SectionName = response.docs.section_name, Headline = response.docs.headline.main, Author=response.docs.byline.original)
+DT::datatable(out, options = list(pageLength = 5))
+```
+
+Searching all articles related to Amazon and returning select columns:
+
+```{r}
+api_file <- "/Users/davidapolinar/Dropbox/APIkeys/nytimes.txt"
+key<-read.delim(api_file, header = FALSE)
+keyword <- "amazon"
+
+query <- paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?", "q=",keyword,"&api-key=",key$V1 ,sep = "")
+y <- fromJSON(query, flatten = TRUE) %>% data.frame()
+
+out <- y %>% select(response.docs.web_url, response.docs.section_name, response.docs.headline.main, response.docs.byline.original) %>% rename(URL = response.docs.web_url, SectionName = response.docs.section_name, Headline = response.docs.headline.main, Author=response.docs.byline.original)
+DT::datatable(out, options = list(pageLength = 5))
+```
+
+
+### NYTimes Movie Review APIs
+
+This API returns all movie reviews by the NYtimes author. The APIs can be customized to return several variables depending on what is selected. For demo purposes, I kept it to just the title, headline, and author.
+
+```{r}
+query2 <-paste0("https://api.nytimes.com/svc/movies/v2/reviews/search.json?", "api-key=",key$V1 ,sep = "")
+x <- fromJSON(query2, flatten = TRUE) %>% data.frame()
+results1 <- x %>% select(Title = results.link.suggested_link_text, Headline = results.headline, Author = results.byline)
+datatable(results1, options = list(pageLength = 5))
+```
+
+### NYTimes Newswire API
+
+This API gets all of the latest articles published. For this section, I used a keyword for the relevant sections that I was interested in retrieving.
+
+Getting all the latest articles related to Business
+
+```{r}
+source = "all"
+section = "Business"
+
+query3 <-paste0("https://api.nytimes.com/svc/news/v3/content/", source, "/", section, "?api-key=",key$V1 ,sep = "")
+x <- fromJSON(query3, flatten = TRUE) %>% data.frame() 
+results3<-x %>% select(results.byline, results.section, results.title) %>% rename(Author=results.byline, Section=results.section, Title=results.title)
+datatable(results3, options = list(pageLength = 5))
+```
+
+Getting all the latest Opinion articles
+
+```{r}
+source = "all"
+section = "Opinion"
+
+query3 <-paste0("https://api.nytimes.com/svc/news/v3/content/", source, "/", section, "?api-key=",key$V1 ,sep = "")
+x <- fromJSON(query3, flatten = TRUE) %>% data.frame() 
+results3<-x %>% select(results.byline, results.section, results.title) %>% rename(Author=results.byline, Section=results.section, Title=results.title)
+datatable(results3, options = list(pageLength = 5))
+```

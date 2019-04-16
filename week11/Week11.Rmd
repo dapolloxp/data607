@@ -1,0 +1,72 @@
+---
+title: "Recommender Systems - Week 11"
+author: "David Apolinar"
+date: "4/15/2019"
+output: 
+  html_document:
+    #df_print: paged
+    toc: true # table of content true
+    toc_collapsed : true
+    toc_float: true
+    code_folding : hide
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    smooth_scroll: true
+    theme: yeti  # many options for theme, this one is my favorite.
+    highlight: textmate  # specifies the syntax highlighting style
+---
+
+# Introduction
+
+Facebook is responsible for connecting over 2 billion people around the world.[^3]  It's the leading social media platform that connects people from all cultures and timezones. With it's huge userbase, Facebook employs several methods to recommend pages, topics, friends, and so forth to its 2+ billion users. I chose to work on Facebook due to the incredible challenge that they have to mine through on a daily basis.
+
+![Facebook Recommended Pages](/Users/davidapolinar/Dropbox/CUNYProjects/Srping2019/Data607/RecommenderSystem/FB.png)
+# Scenario Analysis
+
+## Who are your target users
+
+Facebook's target users includes people of all age groups, cultures, and countries. It's coveted userbase are users in the 12-34 age range.[^3]
+
+## What are their key goals?
+
+Facebook's goal is to connect their users with their friends, family, or products and services that those users find interesting. This can be an individual who is interested in cars, movies, or restaurants and services located within their proximity.
+
+
+## How can you help them accomplish those goals?
+
+One of the ways to ensure that these goals can be achieved and provide users with recommendations that will not be viewed as spam is to combine liked items with a history trail to ensure that the displayed recommendations are still relevant.
+
+## Reverse Engineering
+
+Facebook has a pretty complex system. Reverse engineering such a system would be very challenging. However, some of the techniques I would use would include Sentiment Analysis for comments for products and pages before recommending them to end users. I would also try to leverage external reviews for specific pages, such as Yelp and travel sites, if the page's theme is center on travel. In addition, I would ensure that a recent history trail is used to reduce the amount of data that needs to be mined and analyzed since certain trends and interests will change over time. 
+
+# Technology Leveraged for Recommender System
+
+**Collaborative filtering (CF)** Facebook leverages what it calls Collaborative filtering (CF). As documented in its code.fb.com article, Facebook's CF is based on the idea that the best recommendations come from people who have similar tastes.[^1] As a user, I have seen this occur pretty frequently when I like a specific page. I have liked a specific product, e.g. X-Box, and get a recommended pages, such as Sony PS4, or Nintendo Switch. The intention is to provide personalized services to users and provide accurate and relatable experiences.
+
+**Apache Giraph** Facebook leverages Apache Giraph, which is a iterative graph processing framework built on top of Hadoop[^4]. As illustrated in the diagram below, users with common likes are used as inputs into Giraph with recommendations as outputs for each user.
+
+![Facebook CF](/Users/davidapolinar/Dropbox/CUNYProjects/Srping2019/Data607/RecommenderSystem/FaceBookCF.jpg)
+
+#Data Scale Challenges
+
+Facebook describes its challenge very clearly in its algoritmic process.[^1] Essentialy, due to the shear size of the number of ratings (over 100 billion), data size becomes an issue. Facebook even describes how they attempt to solve the scale issue leveraging techniques, such as **Matrix factorization.** However, due to time constraints, it's not possible leverage this method. As facebook illustrates in the graph below, having billions of users interconnected using roughly 100 "features," can result in over 80 TB in just one iteration.[^1] This is an insane amount of data. If you couple this with missing values and inaccurate or mispelled data, and it becomes expontially difficult. Furthermore, Facebook's algoritm requires atomic processing for some calculations which cannot be parallelized. This issue alone could make it impossible to even create recommendations based on the linear fashion on how of these recommendations are derived.
+
+![Traditional Graph Node Communication](/Users/davidapolinar/Dropbox/CUNYProjects/Srping2019/Data607/RecommenderSystem/graphnode.png)
+
+
+
+# Suggestions for Improving Facebook's recommender system.
+
+Facebook describes their solution to the data problem very eloquently in their document.[^1] To handle the data scale issue, they employ a node messaging system as an extension of the Giraph graph framework to reduce the amount of data transferred. This is more of a technical challenge than an overall recommender system solution. For a better user experience, I would leverage external sources related to the pages users like to improve recommended pages. In addition, I would leverage a user's cookies to augment the recommendation page. I believe Facebook does this for ads, but I am not certain whether Facebook uses it for pages. I  assume they do. Finally, one of the items where I feel Facebook can improve suggestions is by focusing on more recent items than a full history of all pages. This is particularly useful for certain categories, such as movies and certain time based events. It also would help minimize the amount of data for certain topics to show more useful data. Finally, one technique that I would introduce is to select only n_top friends for each user to pull recommendations. One of Facebook's biggest problems is that many users have over 500 friends. According to a study published in the Royal Society Open Science, most users at most will have 150 real friends.[^5] With this information in hand, It would be far more effective to reduce the recommendations between users in the nodes only if there have been recent conversations between the two. It would create a much more personalized recommendation.
+
+![Facebook Graph Node Implementation](/Users/davidapolinar/Dropbox/CUNYProjects/Srping2019/Data607/RecommenderSystem/fbsolution.jpg)
+
+
+#References 
+
+[^1]: https://code.fb.com/core-data/recommending-items-to-more-than-a-billion-people
+[^2]: https://research.fb.com/publications/fighting-boredom-in-recommender-systems-with-linear-reinforcement-learning/
+[^3]: https://www.theverge.com/2019/3/6/18253274/facebook-users-decline-15-million-people-united-states-privacy-scandals
+[^4]: https://giraph.apache.org/intro.html
+[^5]: https://www.abc.net.au/news/science/2016-01-20/150-is-the-limit-of-real-facebook-friends/7101588
